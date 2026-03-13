@@ -5,10 +5,14 @@ import calendar
 import json
 import os
 from telebot import types
+from flask import Flask
+from threading import Thread
 
-# --- ТАНЗИМОТ ---
-API_TOKEN = '8243909668:AAEJ1l9Z0SjfROylti9ii39uAbE59CaeO4I'
-TRAVELPAYOUTS_TOKEN = '71876b59812fee6e1539f9365e6a12dd' 
+# --- ТАНЗИМОТ (Барои Render) ---
+# Дар Render ин номҳоро илова кун: TELEGRAM_TOKEN ва TRAVEL_TOKEN
+API_TOKEN = os.getenv('TELEGRAM_TOKEN', '8243909668:AAEJ1l9Z0SjfROylti9ii39uAbE59CaeO4I')
+TRAVELPAYOUTS_TOKEN = os.getenv('TRAVEL_TOKEN', '71876b59812fee6e1539f9365e6a12dd') 
+
 MY_AFFILIATE_LINK = "https://aviasales.tpo.lu/uvx5sy8B"
 MARKER = '701004' 
 ADMIN_ID = 6900346716 
@@ -16,6 +20,22 @@ ADMIN_ID = 6900346716
 bot = telebot.TeleBot(API_TOKEN)
 DB_FILE = "users_db.json"
 
+# --- ВЕБ-СЕРВЕР БАРОИ ОН КИ RENDER БОТРО ХОМӮШ НАКУНАД ---
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Бот фаъол аст!"
+
+def run():
+    app.run(host='0.0.0.0', port=8080)
+
+def keep_alive():
+    t = Thread(target=run)
+    t.daemon = True
+    t.start()
+
+# --- ФУНКСИЯҲОИ ТУ ---
 def load_db():
     if os.path.exists(DB_FILE):
         try:
@@ -202,7 +222,6 @@ def handle_callbacks(call):
     elif call.data.startswith("dt_"):
         date = call.data.split("_")[1]
         
-        # --- ҲИСОБ ВА ХАБАР БА АДМИН ---
         search_count[cid] = search_count.get(cid, 0) + 1
         if search_count[cid] >= 3:
             u = call.from_user
@@ -246,7 +265,6 @@ def handle_text(message):
         user_data[cid] = {}
         bot.send_message(cid, get_t(cid, 'origin'))
     elif message.text in [get_t(cid, 'btn_lang'), "🌐 Ивази забон", "🌐 Смена языка"]:
-        # Барои ивази забон танҳо хонаи lang-ро иваз мекунем
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton("🇹🇯 Тоҷикӣ", callback_data="sl_tj"),
                    types.InlineKeyboardButton("🇷🇺 Русский", callback_data="sl_ru"))
@@ -262,4 +280,6 @@ def handle_text(message):
                 bot.send_message(cid, f"✅ {res[0]['name']}\n{get_t(cid, 'date')}", reply_markup=create_calendar())
 
 if __name__ == '__main__':
+    keep_alive()  # Оғози веб-сервер
+    print("Бот дар ҳоли кор аст...")
     bot.infinity_polling()
