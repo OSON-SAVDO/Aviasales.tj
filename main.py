@@ -8,13 +8,13 @@ from telebot import types
 from flask import Flask
 from threading import Thread
 
-# --- ТАНЗИМОТ (Барои Render) ---
+# --- ТАНЗИМОТ ---
 API_TOKEN = os.getenv('8243909668:AAEJ1l9Z0SjfROylti9ii39uAbE59CaeO4I', '59CaeO4I')
 TRAVELPAYOUTS_TOKEN = os.getenv('71876b59812fee6e1539f9365e6a12dd', '7d') 
 
 MY_AFFILIATE_LINK = "https://aviasales.tpo.lu/uvx5sy8B"
-MARKER = '' 
-ADMIN_ID = 6
+MARKER = '701004' 
+ADMIN_ID = 6900346716
 
 bot = telebot.TeleBot(API_TOKEN)
 DB_FILE = "users_db.json"
@@ -138,23 +138,19 @@ def create_calendar(y=None, m=None):
                types.InlineKeyboardButton("➡️", callback_data=f"cal_{next_y}_{next_m}"))
     return markup
 
-# --- 1. СТАРТ ВА МУҲОФИЗАТИ ТАРТИБИ ПУРСИШ ---
 @bot.message_handler(commands=['start'])
 def start(message):
     cid = str(message.chat.id)
-    # Тартиб: Агар забон набошад - интихоби забон
     if cid not in user_settings:
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton("🇹🇯 Тоҷикӣ", callback_data="sl_tj"),
                    types.InlineKeyboardButton("🇷🇺 Русский", callback_data="sl_ru"))
         bot.send_message(cid, "Забонро интихоб кунед / Выберите язык:", reply_markup=markup)
-    # Тартиб: Агар рақами телефон набошад - пурсидани рақам
     elif 'phone' not in user_settings[cid]:
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
         markup.add(types.KeyboardButton(get_t(cid, 'btn_phone'), request_contact=True))
         bot.send_message(cid, get_t(cid, 'ask_phone'), reply_markup=markup)
     else:
-        # Вақте ҳамааш пур шуд - Менюи асосӣ бо 3 кнопка
         bot.send_message(cid, get_t(cid, 'main_menu'), reply_markup=main_menu_keyboard(cid))
 
 @bot.message_handler(content_types=['contact'])
@@ -229,7 +225,6 @@ def handle_callbacks(call):
     elif call.data.startswith("dt_"):
         date = call.data.split("_")[1]
         
-        # Ҳисобкунаки ҷустуҷӯ барои фиристодани огаҳӣ ба админ (Қаблии шумо)
         search_count[cid] = search_count.get(cid, 0) + 1
         if search_count[cid] >= 3:
             u = call.from_user
@@ -246,14 +241,13 @@ def handle_callbacks(call):
             
         bot.delete_message(cid, call.message.message_id)
         
-        # Санҷидани намуди нақлиёт (Ҳавопаймо, Поезд ё Автобус)
-        t_type = user_data[cid].get('transport_type', 'flight')
+        t_type = user_data.get(cid, {}).get('transport_type', 'flight')
         if t_type == 'flight':
             search_flights(cid, user_data[cid]['origin'], user_data[cid]['destination'], date)
         elif t_type == 'train':
             org = user_data[cid]['origin_name']
             dst = user_data[cid]['dest_name']
-            link = f"https://tp.media/r?marker=YOUR_MARKER&trs=12345&p=1234&u=https%3A%2F%2Fwww.tutu.ru%2Fpoezda%2Frasp_d.php%3Fnnst1%3D{encode_url(org)}%26nnst2%3D{encode_url(dst)}%26date%3D{date}"
+            link = f"https://tp.media/r?marker={MARKER}&trs=12345&p=1234&u=https%3A%2F%2Fwww.tutu.ru%2Fpoezda%2Frasp_d.php%3Fnnst1%3D{encode_url(org)}%26nnst2%3D{encode_url(dst)}%26date%3D{date}"
             markup = types.InlineKeyboardMarkup()
             markup.add(types.InlineKeyboardButton("🚆 Харидани чиптаи поезд", url=link))
             markup.add(types.InlineKeyboardButton(get_t(cid, 'new_search'), callback_data="new_search"))
@@ -261,7 +255,7 @@ def handle_callbacks(call):
         elif t_type == 'bus':
             org = user_data[cid]['origin_name']
             dst = user_data[cid]['dest_name']
-            link = f"https://tp.media/r?marker=YOUR_MARKER&trs=12345&p=5678&u=https%3A%2F%2Funitiki.com%2Fsearch%3Ffrom%3D{encode_url(org)}%26to%3D{encode_url(dst)}%26date%3D{date}"
+            link = f"https://tp.media/r?marker={MARKER}&trs=12345&p=5678&u=https%3A%2F%2Funitiki.com%2Fsearch%3Ffrom%3D{encode_url(org)}%26to%3D{encode_url(dst)}%26date%3D{date}"
             markup = types.InlineKeyboardMarkup()
             markup.add(types.InlineKeyboardButton("🚌 Харидани чиптаи автобус", url=link))
             markup.add(types.InlineKeyboardButton(get_t(cid, 'new_search'), callback_data="new_search"))
@@ -297,7 +291,6 @@ def handle_text(message):
 
     text = message.text
 
-    # Тугмаҳои менюи асосӣ
     if text in [get_t(cid, 'btn_flight'), "✈️ Ҳавопаймо", "✈️ Самолет"]:
         user_data[cid] = {'transport_type': 'flight'}
         bot.send_message(cid, get_t(cid, 'origin'))
@@ -325,6 +318,6 @@ def handle_text(message):
             bot.send_message(cid, "Шаҳр ёфт нашуд, лутфан дубора ворид кунед:")
 
 if __name__ == '__main__':
-    keep_alive()  # Оғози веб-сервер барои Render
+    keep_alive()
     print("Бот дар ҳоли кор аст...")
     bot.infinity_polling()
