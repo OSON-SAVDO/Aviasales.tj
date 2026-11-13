@@ -9,7 +9,7 @@ from flask import Flask
 from threading import Thread
 
 # --- ТАНЗИМОТ ---
-API_TOKEN = os.getenv('8243909668:AAEJ1l9Z0SjfROylti9ii39uAbE59CaeO4I', '59CaeO4I')
+API_TOKEN = os.getenv('8182346917:AAGgZpSXqf-XOTl1HJjgsw1vC_fLRK3U46U', '59CaeO4I')
 TRAVELPAYOUTS_TOKEN = os.getenv('71876b59812fee6e1539f9365e6a12dd', '7d') 
 
 MY_AFFILIATE_LINK = "https://aviasales.tpo.lu/uvx5sy8B"
