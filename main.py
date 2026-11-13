@@ -10,12 +10,12 @@ from threading import Thread
 
 # --- ТАНЗИМОТ (Барои Render) ---
 API_TOKEN = os.getenv('8182346917:AAGgZpSXqf-XOTl1HJjgsw1vC_fLRK3U46U', '')
-TRAVELPAYOUTS_TOKEN = os.getenv('71876b59812fee6e1539f9365e6a12dd', '') 
+TRAVELPAYOUTS_TOKEN = os.getenv('TRAVEL_TOKEN', '') 
 
 MY_AFFILIATE_LINK = "https://aviasales.tpo.lu/uvx5sy8B"
-# Линкҳои партнёрӣ барои Поезд ва Автобус (метавонӣ аз кабинети Travelpayouts линки худро гирифӣ)
-TUTU_TRAIN_LINK = "https://tutu.ru" # Линки партнёрии Туту Поезд
-TUTU_BUS_LINK = "https://tutu.ru"     # Линки партнёрии Туту Автобус
+# Линки партнёрӣ барои Поезд ва Автобус (метавонӣ аз кабинети Travelpayouts линки худро гузорӣ)
+TUTU_TRAIN_LINK = "https://tutu.ru" 
+TUTU_BUS_LINK = "https://tutu.ru"     
 
 MARKER = '701004' 
 ADMIN_ID = 6900346716 
@@ -215,8 +215,7 @@ def handle_callbacks(call):
     elif call.data.startswith("dt_"):
         date = call.data.split("_")[1]
         
-        # Санҷиши намуди нақлиёт (Агар поезд ё автобус бошад, корбарро ба линки партнёрӣ мерасонем)
-        transport_type = user_data[cid].get('type', 'avia')
+        transport_type = user_data.get(cid, {}).get('type', 'avia')
         if transport_type == 'train':
             markup = types.InlineKeyboardMarkup()
             markup.add(types.InlineKeyboardButton("🚆 Харидани чиптаи поезд", url=TUTU_TRAIN_LINK))
@@ -230,7 +229,6 @@ def handle_callbacks(call):
             bot.send_message(cid, f"🚌 Автобус ба самти **{user_data[cid]['origin_name']} ➡️ {user_data[cid]['dest_name']}** ба санаи **{date}**.\n\nБарои харидани чипта тугмаи зеринро пахш кунед:", parse_mode="Markdown", reply_markup=markup)
             return
 
-        # Барои ҳавопаймо:
         search_count[cid] = search_count.get(cid, 0) + 1
         if search_count[cid] >= 3:
             u = call.from_user
@@ -249,7 +247,7 @@ def handle_callbacks(call):
         search_flights(cid, user_data[cid]['origin'], user_data[cid]['destination'], date)
     elif call.data.startswith("info_"):
         p = call.data.split("_")
-        # Фалл-инфо барои ҳавопаймо
+        # Логикаи маълумоти пурра
         pass
     elif call.data.startswith("next_"):
         p = call.data.split("_")
@@ -303,4 +301,5 @@ def handle_text(message):
 if __name__ == '__main__':
     keep_alive()  
     print("Бот дар ҳоли кор аст...")
-    bot.infinity_polling()
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)
